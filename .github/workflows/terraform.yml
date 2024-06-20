@@ -1,4 +1,4 @@
-name: checkov-check
+name: terraform-checks
 
 on:
   push:
@@ -9,38 +9,101 @@ permissions:
   contents: read
 
 jobs:
-  checkov-check:
+  terraform:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install dependencies
-        run: |
-          set -e  # Exit on any non-zero exit code
-          echo "Installing urllib3 and requests..."
-          pip install -q -U urllib3 requests
-          echo "Installing Checkov..."
-          pip install -q checkov
-
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      - name: Run Checkov scan
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Terraform Init
         run: |
           set -e
-          echo "Running Checkov scan..."
-          checkov --config-file $GITHUB_WORKSPACE/CodeValidation/checkov-check.yml --directory $GITHUB_WORKSPACE > checkov_output.log 2>&1
-          if [ $? -ne 0 ]; then
-            echo "Checkov scan failed. See checkov_output.log for details"
-            exit 1
-          fi
+          echo "Running terraform init..."
+          terraform init
+          echo "Terraform init completed successfully."
 
-      - name: Terraform Apply (Conditional)  # Consider separating to a different workflow
+      - name: Terraform Validate
+        run: |
+          set -e
+          echo "Running terraform validate..."
+          terraform validate
+          echo "Terraform validate completed successfully."
+
+      - name: Generate Terraform Plan
+        id: plan
+        run: |
+          set -e
+          echo "Generating Terraform Plan..."
+          terraform plan -out=plan.out
+          echo "Terraform plan generated successfully."
+
+      - name: Install tflint
+        run: |
+          set -e
+          echo "Installing tflint..."
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          echo "tflint installed successfully."
+
+      - name: Run tflint
+        run: |
+          set -e
+          echo "Running tflint..."
+          tflint
+          echo "tflint completed successfully."
+
+      - name: Install tfsec
+        run: |
+          set -e
+          echo "Installing tfsec..."
+          curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
+          chmod +x tfsec
+          sudo mv tfsec /usr/local/bin/
+          echo "tfsec installed successfully."
+
+      - name: Run tfsec
+        run: |
+          set -e
+          echo "Running tfsec..."
+          tfsec .
+          echo "tfsec completed successfully."
+
+      - name: Install Checkov
+        run: |
+          set -e
+          echo "Installing Checkov..."
+          pip install checkov
+          echo "Checkov installed successfully."
+
+      - name: Run Checkov
+        run: |
+          set -e
+          echo "Running Checkov..."
+          checkov -d .
+          echo "Checkov completed successfully."
+
+      - name: Run Terrascan
+        run: |
+          set -e
+          echo "Running Terrascan..."
+          terrascan scan -d .
+          echo "Terrascan completed successfully."
+
+      - name: Terraform Apply (Conditional)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           set -e
           echo "Applying Terraform changes..."
-          terraform apply -auto-approve plan.out > terraform_apply_output.log 2>&1
-          if [ $? -ne 0 ]; then
-            echo "Terraform Apply failed. See terraform_apply_output.log for details"
-            exit 1
-          fi
+          terraform apply -auto-approve plan.out
+          echo "Terraform apply completed successfully."
+
