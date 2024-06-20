@@ -18,9 +18,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        continue-on-error: false
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
+        continue-on-error: false
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -28,34 +30,19 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
+        continue-on-error: false
 
       - name: Terraform Init
-        run: |
-          echo "Running terraform init..."
-          terraform init
-          if [ $? -ne 0 ]; then
-            echo "Terraform Init failed"
-            exit 1
-          fi
+        run: terraform init
+        continue-on-error: false
 
       - name: Terraform Validate
-        run: |
-          echo "Running terraform validate..."
-          terraform validate
-          if [ $? -ne 0 ]; then
-            echo "Terraform Validate failed"
-            exit 1
-          fi
+        run: terraform validate
+        continue-on-error: false
 
-      - name: Generate Terraform Plan
-        id: plan
-        run: |
-          echo "Generating Terraform Plan..."
-          terraform plan -out=plan.out
-          if [ $? -ne 0 ]; then
-            echo "Terraform Plan failed"
-            exit 1
-          fi
+      - name: Terraform Plan
+        run: terraform plan
+        continue-on-error: false
 
       - name: Install tflint
         run: |
@@ -65,6 +52,7 @@ jobs:
             echo "tflint installation failed"
             exit 1
           fi
+        continue-on-error: false
 
       - name: Run tflint
         run: |
@@ -74,6 +62,7 @@ jobs:
             echo "tflint found issues"
             exit 1
           fi
+        continue-on-error: false
 
       - name: Install tfsec
         run: |
@@ -85,6 +74,7 @@ jobs:
             echo "tfsec installation failed"
             exit 1
           fi
+        continue-on-error: false
 
       - name: Run tfsec
         run: |
@@ -94,6 +84,7 @@ jobs:
             echo "tfsec found issues"
             exit 1
           fi
+        continue-on-error: false
 
       - name: Install Checkov
         run: |
@@ -103,6 +94,7 @@ jobs:
             echo "Checkov installation failed"
             exit 1
           fi
+        continue-on-error: false
 
       - name: Run Checkov
         run: |
@@ -112,15 +104,42 @@ jobs:
             echo "Checkov found issues"
             exit 1
           fi
+        continue-on-error: false
+
+      - name: Install Terrascan
+        run: |
+          echo "Installing Terrascan..."
+          curl -LJO https://github.com/accurics/terrascan/releases/latest/download/terrascan-Linux-x86_64
+          chmod +x terrascan-Linux-x86_64
+          sudo mv terrascan-Linux-x86_64 /usr/local/bin/terrascan
+          if [ $? -ne 0 ]; then
+            echo "Terrascan installation failed"
+            exit 1
+          fi
+        continue-on-error: false
 
       - name: Run Terrascan
-        id: terrascan
-        uses: tenable/terrascan-action@main
-        with:
-          iac_type: 'terraform'
-          iac_version: 'v14'
-          policy_type: 'aws'
-          only_warn: true
+        run: |
+          echo "Running Terrascan..."
+          terrascan scan -d .
+          if [ $? -ne 0 ]; then
+            echo "Terrascan found issues"
+            exit 1
+          fi
+        continue-on-error: false
+
+      
+     
+      - name: Generate Terraform Plan
+        id: plan
+        run: |
+          echo "Generating Terraform Plan..."
+          terraform plan -out=plan.out
+          if [ $? -ne 0 ]; then
+            echo "Terraform Plan generation failed"
+            exit 1
+          fi
+        continue-on-error: false
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -131,3 +150,4 @@ jobs:
             echo "Terraform Apply failed"
             exit 1
           fi
+        continue-on-error: false
