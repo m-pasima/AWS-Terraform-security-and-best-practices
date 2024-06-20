@@ -1,105 +1,58 @@
-name: Terraform
+name: Project Name
 
 on:
+  pull_request:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-
-permissions:
-  contents: read
 
 jobs:
-  terraform:
+  test_and_deploy:
+    name: Deploy Infrastructure
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
       - name: Terraform Init
-        run: |
-          echo "Running terraform init..."
-          terraform init
+        run: terraform init
 
       - name: Terraform Validate
-        run: |
-          echo "Running terraform validate..."
-          terraform validate
+        run: terraform validate
 
-      - name: Generate Terraform Plan
-        id: plan
+      - name: Terraform Plan
         run: |
-          echo "Generating Terraform Plan..."
           terraform plan -out=plan.out
+          terraform show -json plan.out > plan.out.json
 
-      - name: Install tflint
-        run: |
-          echo "Installing tflint..."
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-
-      - name: Run tflint
-        run: |
-          echo "Running tflint..."
-          tflint
-
-      - name: Install tfsec
-        run: |
-          echo "Installing tfsec..."
-          curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
-          chmod +x tfsec
-          sudo mv tfsec /usr/local/bin/
-
-      - name: Run tfsec
-        run: |
-          echo "Running tfsec..."
-          tfsec .
-
-      - name: Install Checkov
-        run: |
-          echo "Installing Checkov..."
-          pip install checkov
-
-      - name: Run Checkov
-        run: |
-          echo "Running Checkov..."
-          checkov -d .
-
-      - name: Run Terrascan
-        id: terrascan
-        uses: tenable/terrascan-action@main
+      - name: Install Python
+        uses: actions/setup-python@v4
         with:
-          iac_type: 'terraform'
-          iac_version: 'v14'
-          policy_type: 'aws'
-          only_warn: true
+          python-version: 3.11
+          cache: 'pip'
 
-      - name: Install terraform-compliance
-        run: |
-          echo "Installing terraform-compliance..."
-          pip install terraform-compliance
+      - name: Install Requirements
+        run: pip install -r requirements.txt
 
-      - name: Run terraform-compliance
-        run: |
-          echo "Running terraform-compliance..."
-          terraform-compliance -p plan.out -f compliance/
+      - name: Terraform Compliance
+        run: terraform-compliance -f compliance -p plan.out.json
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          echo "Applying Terraform changes..."
-          terraform apply -auto-approve plan.out
-
-        
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
