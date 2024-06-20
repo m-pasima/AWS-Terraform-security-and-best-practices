@@ -18,11 +18,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        continue-on-error: false
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
-        continue-on-error: false
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -30,75 +28,79 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
-        continue-on-error: false
 
       - name: Terraform Init
         run: terraform init
-        continue-on-error: false
 
       - name: Terraform Validate
         run: terraform validate
-        continue-on-error: false
 
       - name: Terraform Plan
         run: terraform plan
-        continue-on-error: false
 
       - name: Install tflint
         run: |
           curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-        continue-on-error: false
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Run tflint
-        run: tflint
-        continue-on-error: false
+        run: |
+          tflint
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Install tfsec
         run: |
           curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
           chmod +x tfsec
           sudo mv tfsec /usr/local/bin/
-        continue-on-error: false
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Run tfsec
-        run: tfsec .
-        continue-on-error: false
+        run: |
+          tfsec .
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Install Checkov
         run: |
           pip install checkov
-        continue-on-error: false
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Run Checkov
-        run: checkov -d .
-        continue-on-error: false
+        run: |
+          checkov -d .
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Install Terrascan
         run: |
           curl -LJO https://github.com/accurics/terrascan/releases/latest/download/terrascan-Linux-x86_64
           chmod +x terrascan-Linux-x86_64
           sudo mv terrascan-Linux-x86_64 /usr/local/bin/terrascan
-        continue-on-error: false
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Run Terrascan
-        run: terrascan scan -d .
-        continue-on-error: false
+        run: |
+          terrascan scan -d .
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Install terraform-compliance
         run: |
           pip install terraform-compliance
-        continue-on-error: false
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Run terraform-compliance
-        run: terraform-compliance -p plan.out -f compliance/
-        continue-on-error: false
+        run: |
+          terraform-compliance -p plan.out -f compliance/
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Generate Terraform Plan
         id: plan
-        run: terraform plan -out=plan.out
-        continue-on-error: false
+        run: |
+          terraform plan -out=plan.out
+          if [ $? -ne 0 ]; then exit 1; fi
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve plan.out
-        continue-on-error: false
+        run: |
+          terraform apply -auto-approve plan.out
+          if [ $? -ne 0 ]; then exit 1; fi
+
