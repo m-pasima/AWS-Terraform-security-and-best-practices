@@ -13,6 +13,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      actions: read  # Add the least privilege permissions required
 
     steps:
       - name: Checkout code
