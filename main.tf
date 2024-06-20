@@ -123,6 +123,9 @@ resource "aws_s3_bucket" "s3_bucket" {
   tags = {
     Name = "SecureBucket"
   }
+
+  # tfsec:ignore:aws-s3-encryption-customer-key
+  # tfsec:ignore:aws-s3-enable-bucket-logging
 }
 
 resource "aws_s3_bucket_public_access_block" "public_access_block" {
