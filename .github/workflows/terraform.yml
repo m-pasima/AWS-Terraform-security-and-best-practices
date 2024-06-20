@@ -1,4 +1,4 @@
-name: Project Name
+name: Terraform Workflow
 
 on:
   pull_request:
@@ -41,18 +41,40 @@ jobs:
           terraform plan -out=plan.out
           terraform show -json plan.out > plan.out.json
 
-      - name: Install Python
-        uses: actions/setup-python@v4
+      - name: Install tflint
+        run: |
+          echo "Installing tflint..."
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      - name: Run tflint
+        run: tflint
+
+      - name: Install tfsec
+        run: |
+          echo "Installing tfsec..."
+          curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
+          chmod +x tfsec
+          sudo mv tfsec /usr/local/bin/
+
+      - name: Run tfsec
+        run: tfsec .
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Run Checkov
+        run: checkov -d .
+
+      - name: Run Terrascan
+        id: terrascan
+        uses: tenable/terrascan-action@main
         with:
-          python-version: 3.11
-          cache: 'pip'
-
-      - name: Install Requirements
-        run: pip install -r requirements.txt
-
-      - name: Terraform Compliance
-        run: terraform-compliance -f compliance -p plan.out.json
+          iac_type: 'terraform'
+          iac_version: 'v14'
+          policy_type: 'aws'
+          only_warn: true
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve plan.out
+
