@@ -1,3 +1,4 @@
+
 name: Terraform
 
 on:
@@ -18,11 +19,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        continue-on-error: false
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
-        continue-on-error: false
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -30,44 +29,37 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
-        continue-on-error: false
 
       - name: Terraform Init
         run: |
           echo "Running terraform init..."
           terraform init
-        continue-on-error: false
 
       - name: Terraform Validate
         run: |
           echo "Running terraform validate..."
           terraform validate
-        continue-on-error: false
 
       - name: Generate Terraform Plan
         id: plan
         run: |
           echo "Generating Terraform Plan..."
           terraform plan -out=plan.out
-        continue-on-error: false
 
       - name: Terraform Plan
         run: |
           echo "Running terraform plan..."
           terraform plan -out=plan.out
-        continue-on-error: false
 
       - name: Install tflint
         run: |
           echo "Installing tflint..."
           curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-        continue-on-error: false
 
       - name: Run tflint
         run: |
           echo "Running tflint..."
           tflint
-        continue-on-error: false
 
       - name: Install tfsec
         run: |
@@ -75,25 +67,21 @@ jobs:
           curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
           chmod +x tfsec
           sudo mv tfsec /usr/local/bin/
-        continue-on-error: false
 
       - name: Run tfsec
         run: |
           echo "Running tfsec..."
           tfsec .
-        continue-on-error: false
 
       - name: Install Checkov
         run: |
           echo "Installing Checkov..."
           pip install checkov
-        continue-on-error: false
 
       - name: Run Checkov
         run: |
           echo "Running Checkov..."
           checkov -d .
-        continue-on-error: false
 
       - name: Run Terrascan
         id: terrascan
@@ -108,19 +96,20 @@ jobs:
         run: |
           echo "Installing terraform-compliance..."
           pip install terraform-compliance
-        continue-on-error: false
+
+      - name: Create compliance directory
+        run: |
+          echo "Creating compliance directory..."
+          mkdir -p compliance
 
       - name: Run terraform-compliance
         run: |
           echo "Running terraform-compliance..."
           terraform-compliance -p plan.out -f compliance/
-        continue-on-error: false
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           echo "Applying Terraform changes..."
           terraform apply -auto-approve plan.out
-        continue-on-error: false
-
 
