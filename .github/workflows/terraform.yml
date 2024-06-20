@@ -3,7 +3,7 @@ name: terraform-checks
 on:
   push:
     branches:
-      - 'main*'
+      - 'main'
 
 permissions:
   contents: read
@@ -96,7 +96,9 @@ jobs:
         run: |
           set -e
           echo "Installing Terrascan..."
-          curl -sL https://github.com/tenable/terrascan/releases/latest/download/terrascan_Linux_x86_64.tar.gz | tar -xz -C /usr/local/bin terrascan
+          curl -sL https://github.com/tenable/terrascan/releases/latest/download/terrascan_1.14.0_Linux_x86_64.tar.gz -o terrascan.tar.gz
+          tar -xzf terrascan.tar.gz
+          sudo mv terrascan /usr/local/bin/
           echo "Terrascan installed successfully."
 
       - name: Run Terrascan
