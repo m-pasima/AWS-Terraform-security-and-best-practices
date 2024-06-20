@@ -3,7 +3,7 @@ name: terraform-checks
 on:
   push:
     branches:
-      - 'main'
+      - 'main*'
 
 permissions:
   contents: read
@@ -91,6 +91,13 @@ jobs:
           echo "Running Checkov..."
           checkov --directory $GITHUB_WORKSPACE --skip-check CKV2_AWS_41
           echo "Checkov completed successfully."
+
+      - name: Install Terrascan
+        run: |
+          set -e
+          echo "Installing Terrascan..."
+          curl -sL https://github.com/tenable/terrascan/releases/latest/download/terrascan_Linux_x86_64.tar.gz | tar -xz -C /usr/local/bin terrascan
+          echo "Terrascan installed successfully."
 
       - name: Run Terrascan
         run: |
