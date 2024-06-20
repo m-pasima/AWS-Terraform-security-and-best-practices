@@ -34,7 +34,7 @@ resource "aws_iam_role" "ec2_role" {
   EOF
 }
 
-# Create an IAM Policy with specific permissions
+# Create an IAM Policy
 resource "aws_iam_policy" "terraform_policy" {
   name   = "terraform-sec-policy"
   policy = <<EOF
@@ -43,9 +43,7 @@ resource "aws_iam_policy" "terraform_policy" {
     "Statement": [
       {
         "Action": [
-          "ec2:DescribeInstances",
-          "ec2:DescribeVolumes",
-          "ec2:DescribeSnapshots"
+          "ec2:Describe*"
         ],
         "Effect": "Allow",
         "Resource": "*"
@@ -72,6 +70,8 @@ resource "aws_instance" "ec2_profile_instance" {
   ami                  = "ami-0b53285ea6c7a08a7"
   instance_type        = "t2.micro"
   iam_instance_profile = aws_iam_instance_profile.terraform_profile.name
+  ebs_optimized        = true
+  monitoring           = true
 
   metadata_options {
     http_tokens = "required"
@@ -86,10 +86,12 @@ resource "aws_instance" "ec2_profile_instance" {
   }
 }
 
-# Create an additional EC2 Instance
 resource "aws_instance" "terraform" {
-  ami           = "ami-0b53285ea6c7a08a7"
-  instance_type = "t2.micro"
+  ami                  = "ami-0b53285ea6c7a08a7"
+  instance_type        = "t2.micro"
+  ebs_optimized        = true
+  monitoring           = true
+  iam_instance_profile = aws_iam_instance_profile.terraform_profile.name
 
   metadata_options {
     http_tokens = "required"
@@ -103,3 +105,5 @@ resource "aws_instance" "terraform" {
     Name = "terraform-test"
   }
 }
+
+
