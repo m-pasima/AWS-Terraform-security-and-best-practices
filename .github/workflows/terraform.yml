@@ -18,9 +18,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        continue-on-error: false
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
+        continue-on-error: false
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -28,79 +30,176 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
+        continue-on-error: false
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          echo "Running terraform init..."
+          terraform init
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "terraform init failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Terraform Validate
-        run: terraform validate
+        run: |
+          echo "Running terraform validate..."
+          terraform validate
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "terraform validate failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Terraform Plan
-        run: terraform plan
+        run: |
+          echo "Running terraform plan..."
+          terraform plan
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "terraform plan failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Install tflint
         run: |
+          echo "Installing tflint..."
           curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "tflint installation failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Run tflint
         run: |
+          echo "Running tflint..."
           tflint
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "tflint found issues with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Install tfsec
         run: |
+          echo "Installing tfsec..."
           curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
           chmod +x tfsec
           sudo mv tfsec /usr/local/bin/
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "tfsec installation failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Run tfsec
         run: |
+          echo "Running tfsec..."
           tfsec .
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "tfsec found issues with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Install Checkov
         run: |
+          echo "Installing Checkov..."
           pip install checkov
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Checkov installation failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Run Checkov
         run: |
+          echo "Running Checkov..."
           checkov -d .
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Checkov found issues with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Install Terrascan
         run: |
+          echo "Installing Terrascan..."
           curl -LJO https://github.com/accurics/terrascan/releases/latest/download/terrascan-Linux-x86_64
           chmod +x terrascan-Linux-x86_64
           sudo mv terrascan-Linux-x86_64 /usr/local/bin/terrascan
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Terrascan installation failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Run Terrascan
         run: |
+          echo "Running Terrascan..."
           terrascan scan -d .
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Terrascan found issues with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Install terraform-compliance
         run: |
+          echo "Installing terraform-compliance..."
           pip install terraform-compliance
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "terraform-compliance installation failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Run terraform-compliance
         run: |
+          echo "Running terraform-compliance..."
           terraform-compliance -p plan.out -f compliance/
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "terraform-compliance found issues with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Generate Terraform Plan
         id: plan
         run: |
+          echo "Generating Terraform Plan..."
           terraform plan -out=plan.out
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Terraform Plan generation failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
+          echo "Applying Terraform changes..."
           terraform apply -auto-approve plan.out
-          if [ $? -ne 0 ]; then exit 1; fi
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Terraform Apply failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        continue-on-error: false
 
