@@ -91,7 +91,9 @@ jobs:
       - name: Install Terrascan
         run: |
           echo "Installing Terrascan..."
-          curl -sL https://runterrascan.io/install.sh | bash
+          curl -L https://github.com/tenable/terrascan/releases/latest/download/terrascan-linux-amd64 -o terrascan
+          chmod +x terrascan
+          sudo mv terrascan /usr/local/bin/terrascan
         continue-on-error: false
 
       - name: Verify Terrascan Installation
