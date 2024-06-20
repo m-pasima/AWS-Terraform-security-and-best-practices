@@ -73,7 +73,7 @@ resource "aws_iam_instance_profile" "terraform_profile" {
 
 # Create an EC2 Instance with the IAM Instance Profile
 resource "aws_instance" "ec2_profile_instance" {
-  ami                  = "ami-0b53285ea6c7a08a7"
+  ami                  = "ami-07d1e0a32156d0d21"
   instance_type        = "t2.micro"
   iam_instance_profile = aws_iam_instance_profile.terraform_profile.name
   ebs_optimized        = true
@@ -93,7 +93,7 @@ resource "aws_instance" "ec2_profile_instance" {
 }
 
 resource "aws_instance" "terraform" {
-  ami                  = "ami-0b53285ea6c7a08a7"
+  ami                  = "ami-07d1e0a32156d0d21"
   instance_type        = "t2.micro"
   ebs_optimized        = true
   monitoring           = true
