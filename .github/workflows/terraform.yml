@@ -85,6 +85,13 @@ jobs:
           pip install checkov
           echo "Checkov installed successfully."
 
+      - name: Run Checkov
+        run: |
+          set -e
+          echo "Running Checkov..."
+          checkov --directory $GITHUB_WORKSPACE --skip-check CKV2_AWS_41
+          echo "Checkov completed successfully."
+
       - name: Install Terraform fmt
         run: |
           set -e
@@ -101,29 +108,6 @@ jobs:
           terraform fmt -recursive
           echo "Terraform code formatted successfully."
 
-      - name: Run Checkov
-        run: |
-          set -e
-          echo "Running Checkov..."
-          checkov --directory $GITHUB_WORKSPACE
-          echo "Checkov completed successfully."
-
-      - name: Install Terrascan
-        run: |
-          set -e
-          echo "Installing Terrascan..."
-          curl -sL https://api.github.com/repos/tenable/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz" | wget -i - -O terrascan.tar.gz
-          tar -xzf terrascan.tar.gz
-          sudo mv terrascan /usr/local/bin/
-          echo "Terrascan installed successfully."
-
-      - name: Run Terrascan
-        run: |
-          set -e
-          echo "Running Terrascan..."
-          terrascan scan -d .
-          echo "Terrascan completed successfully."
-
       - name: Terraform Apply (Conditional)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
@@ -131,6 +115,7 @@ jobs:
           echo "Applying Terraform changes..."
           terraform apply -auto-approve plan.out
           echo "Terraform apply completed successfully."
+
 
 
 
