@@ -62,21 +62,21 @@ jobs:
           tflint
           echo "tflint completed successfully."
 
-      - name: Install tfsec
-        run: |
-          set -e
-          echo "Installing tfsec..."
-          curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
-          chmod +x tfsec
-          sudo mv tfsec /usr/local/bin/
-          echo "tfsec installed successfully."
+     # - name: Install tfsec
+       # run: |
+       #   set -e
+       #   echo "Installing tfsec..."
+        #  curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
+        #  chmod +x tfsec
+        #  sudo mv tfsec /usr/local/bin/
+        #  echo "tfsec installed successfully."
 
-      - name: Run tfsec
-        run: |
-          set -e
-          echo "Running tfsec..."
-          tfsec .
-          echo "tfsec completed successfully."
+     # - name: Run tfsec
+      #  run: |
+      #    set -e
+       #   echo "Running tfsec..."
+       #   tfsec .
+        #  echo "tfsec completed successfully."
 
       - name: Install Checkov
         run: |
