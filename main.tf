@@ -34,7 +34,7 @@ resource "aws_iam_role" "ec2_role" {
   EOF
 }
 
-# Create an IAM Policy
+# Create an IAM Policy with specific permissions
 resource "aws_iam_policy" "terraform_policy" {
   name   = "terraform-sec-policy"
   policy = <<EOF
@@ -43,7 +43,9 @@ resource "aws_iam_policy" "terraform_policy" {
     "Statement": [
       {
         "Action": [
-          "ec2:Describe*"
+          "ec2:DescribeInstances",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeSnapshots"
         ],
         "Effect": "Allow",
         "Resource": "*"
@@ -71,6 +73,14 @@ resource "aws_instance" "ec2_profile_instance" {
   instance_type        = "t2.micro"
   iam_instance_profile = aws_iam_instance_profile.terraform_profile.name
 
+  metadata_options {
+    http_tokens = "required"
+  }
+
+  root_block_device {
+    encrypted = true
+  }
+
   tags = {
     Name = "Terraform-Profile"
   }
@@ -81,12 +91,20 @@ resource "aws_instance" "terraform" {
   ami           = "ami-0b53285ea6c7a08a7"
   instance_type = "t2.micro"
 
+  metadata_options {
+    http_tokens = "required"
+  }
+
+  root_block_device {
+    encrypted = true
+  }
+
   tags = {
     Name = "terraform-test"
   }
 }
 
-# Create an S3 Bucket with versioning and encryption enabled
+# Create an S3 Bucket with versioning and default server-side encryption
 resource "aws_s3_bucket" "s3_bucket" {
   bucket = "secure_sec_config"
 
@@ -101,4 +119,19 @@ resource "aws_s3_bucket" "s3_bucket" {
       }
     }
   }
+
+  tags = {
+    Name = "SecureBucket"
+  }
 }
+
+resource "aws_s3_bucket_public_access_block" "public_access_block" {
+  bucket = aws_s3_bucket.s3_bucket.id
+
+  block_public_acls   = true
+  block_public_policy = true
+  ignore_public_acls  = true
+  restrict_public_buckets = true
+}
+
+
