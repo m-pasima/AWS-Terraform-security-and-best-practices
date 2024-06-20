@@ -91,9 +91,7 @@ jobs:
       - name: Install Terrascan
         run: |
           echo "Installing Terrascan..."
-          curl -LJO https://github.com/accurics/terrascan/releases/latest/download/terrascan-Linux-x86_64
-          chmod +x terrascan-Linux-x86_64
-          sudo mv terrascan-Linux-x86_64 /usr/local/bin/terrascan
+          curl -sL https://runterrascan.io/install.sh | bash
         continue-on-error: false
 
       - name: Verify Terrascan Installation
