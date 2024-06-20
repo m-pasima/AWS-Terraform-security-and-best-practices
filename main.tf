@@ -13,12 +13,10 @@ provider "aws" {
   region = "eu-west-2"
 }
 
-
-# Create an EC2 Instance with the IAM Instance Profile
-resource "aws_instance" "ec2_profile_instance" {
-  ami                  = "ami-0b53285ea6c7a08a7"
+# Create an EC2 Instance
+resource "aws_instance" "ec2_instance" {
+  ami                  = "ami-0c55b159cbfafe1f0"  # Update with a valid AMI ID for the region
   instance_type        = "t2.micro"
-  iam_instance_profile = aws_iam_instance_profile.terraform_profile.name
   ebs_optimized        = true
   monitoring           = true
 
@@ -31,7 +29,7 @@ resource "aws_instance" "ec2_profile_instance" {
   }
 
   tags = {
-    Name = "Terraform-Profile"
+    Name = "Terraform-Instance"
   }
 }
 
