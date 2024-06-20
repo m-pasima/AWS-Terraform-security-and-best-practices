@@ -43,7 +43,13 @@ resource "aws_iam_policy" "terraform_policy" {
     "Statement": [
       {
         "Action": [
-          "ec2:Describe*"
+          "ec2:DescribeInstances",
+          "ec2:DescribeTags",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeSnapshots",
+          "ec2:DescribeImages",
+          "ec2:DescribeKeyPairs"
         ],
         "Effect": "Allow",
         "Resource": "*"
@@ -105,5 +111,3 @@ resource "aws_instance" "terraform" {
     Name = "terraform-test"
   }
 }
-
-
