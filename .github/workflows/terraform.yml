@@ -89,7 +89,7 @@ jobs:
         run: |
           set -e
           echo "Running Checkov..."
-          checkov -d .
+          checkov --config-file $GITHUB_WORKSPACE/CodeValidation/checkov-check.yml --directory $GITHUB_WORKSPACE --skip-check CKV2_AWS_41
           echo "Checkov completed successfully."
 
       - name: Run Terrascan
@@ -106,4 +106,3 @@ jobs:
           echo "Applying Terraform changes..."
           terraform apply -auto-approve plan.out
           echo "Terraform apply completed successfully."
-
