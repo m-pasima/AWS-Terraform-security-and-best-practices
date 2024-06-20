@@ -88,25 +88,14 @@ jobs:
           checkov -d .
         continue-on-error: false
 
-      - name: Install Terrascan
-        run: |
-          echo "Installing Terrascan..."
-          curl -L https://github.com/tenable/terrascan/releases/latest/download/terrascan-linux-amd64 -o terrascan
-          chmod +x terrascan
-          sudo mv terrascan /usr/local/bin/terrascan
-        continue-on-error: false
-
-      - name: Verify Terrascan Installation
-        run: |
-          echo "Verifying Terrascan installation..."
-          terrascan version
-        continue-on-error: false
-
       - name: Run Terrascan
-        run: |
-          echo "Running Terrascan..."
-          terrascan scan -d .
-        continue-on-error: false
+        id: terrascan
+        uses: tenable/terrascan-action@main
+        with:
+          iac_type: 'terraform'  # Specify your IaC type (e.g., terraform, k8s, helm, kustomize)
+          iac_version: 'v14'     # Specify the IaC version (e.g., v14 for Terraform)
+          policy_type: 'aws'     # Specify the policy type (e.g., aws, azure, gcp, github)
+          only_warn: true        # Optional: Only warn (don't error) on violations
 
       - name: Install terraform-compliance
         run: |
@@ -133,3 +122,4 @@ jobs:
           echo "Applying Terraform changes..."
           terraform apply -auto-approve plan.out
         continue-on-error: false
+
