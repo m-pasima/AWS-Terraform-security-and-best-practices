@@ -75,7 +75,7 @@ resource "aws_iam_instance_profile" "terraform_profile" {
 resource "aws_instance" "ec2_profile_instance" {
   ami                  = "ami-07d1e0a32156d0d21"
   instance_type        = "t2.micro"
-  iam_instance_profile = aws_iam_instance_profile.terraform_profile".name
+  iam_instance_profile = aws_iam_instance_profile.terraform_profile.name
   ebs_optimized        = true
   monitoring           = true
 
@@ -91,4 +91,5 @@ resource "aws_instance" "ec2_profile_instance" {
     Name = "Terraform-Profile"
   }
 }
+
 
