@@ -33,27 +33,47 @@ jobs:
         run: |
           echo "Running terraform init..."
           terraform init
+          if [ $? -ne 0 ]; then
+            echo "Terraform Init failed"
+            exit 1
+          fi
 
       - name: Terraform Validate
         run: |
           echo "Running terraform validate..."
           terraform validate
+          if [ $? -ne 0 ]; then
+            echo "Terraform Validate failed"
+            exit 1
+          fi
 
       - name: Generate Terraform Plan
         id: plan
         run: |
           echo "Generating Terraform Plan..."
           terraform plan -out=plan.out
+          if [ $? -ne 0 ]; then
+            echo "Terraform Plan failed"
+            exit 1
+          fi
 
       - name: Install tflint
         run: |
           echo "Installing tflint..."
           curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          if [ $? -ne 0 ]; then
+            echo "tflint installation failed"
+            exit 1
+          fi
 
       - name: Run tflint
         run: |
           echo "Running tflint..."
           tflint
+          if [ $? -ne 0 ]; then
+            echo "tflint found issues"
+            exit 1
+          fi
 
       - name: Install tfsec
         run: |
@@ -61,21 +81,37 @@ jobs:
           curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
           chmod +x tfsec
           sudo mv tfsec /usr/local/bin/
+          if [ $? -ne 0 ]; then
+            echo "tfsec installation failed"
+            exit 1
+          fi
 
       - name: Run tfsec
         run: |
           echo "Running tfsec..."
           tfsec .
+          if [ $? -ne 0 ]; then
+            echo "tfsec found issues"
+            exit 1
+          fi
 
       - name: Install Checkov
         run: |
           echo "Installing Checkov..."
           pip install checkov
+          if [ $? -ne 0 ]; then
+            echo "Checkov installation failed"
+            exit 1
+          fi
 
       - name: Run Checkov
         run: |
           echo "Running Checkov..."
           checkov -d .
+          if [ $? -ne 0 ]; then
+            echo "Checkov found issues"
+            exit 1
+          fi
 
       - name: Run Terrascan
         id: terrascan
@@ -86,10 +122,12 @@ jobs:
           policy_type: 'aws'
           only_warn: true
 
-  
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           echo "Applying Terraform changes..."
           terraform apply -auto-approve plan.out
-
+          if [ $? -ne 0 ]; then
+            echo "Terraform Apply failed"
+            exit 1
+          fi
