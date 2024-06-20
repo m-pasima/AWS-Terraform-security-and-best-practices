@@ -97,7 +97,7 @@ jobs:
         run: |
           set -e
           echo "Applying Terraform changes..."
-          terraform apply -auto-approve plan.out
+          terraform apply -auto-approve 
           echo "Terraform apply completed successfully."
 
 
