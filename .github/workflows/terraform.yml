@@ -1,93 +1,40 @@
-name: Terraform
+name: checkov-check
 
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - 'tech-dev-*'
 
-permissions:
-  contents: read
+permissions: read-all
 
 jobs:
-  terraform:
+  checkov-check:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
-
-      - name: Terraform Init
+      - name: Install dependencies
         run: |
-          echo "Running terraform init..."
-          terraform init
-
-      - name: Terraform Validate
-        run: |
-          echo "Running terraform validate..."
-          terraform validate
-
-      - name: Generate Terraform Plan
-        id: plan
-        run: |
-          echo "Generating Terraform Plan..."
-          terraform plan -out=plan.out
-
-      - name: Install tflint
-        run: |
-          echo "Installing tflint..."
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-
-      - name: Run tflint
-        run: |
-          echo "Running tflint..."
-          tflint
-
-      - name: Install tfsec
-        run: |
-          echo "Installing tfsec..."
-          curl -sL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o tfsec
-          chmod +x tfsec
-          sudo mv tfsec /usr/local/bin/
-
-      - name: Run tfsec
-        run: |
-          echo "Running tfsec..."
-          tfsec .
-
-      - name: Install Checkov
-        run: |
+          echo "Installing urllib3 and requests..."
+          pip install -q -U urllib3 requests
+          if [ $? -ne 0 ]; then
+            echo "Failed to install urllib3 and requests"
+            exit 1
+          fi
           echo "Installing Checkov..."
-          pip install checkov
+          pip install -q checkov
+          if [ $? -ne 0 ]; then
+            echo "Failed to install Checkov"
+            exit 1
+          fi
 
-      - name: Run Checkov
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Checkov scan
         run: |
-          echo "Running Checkov..."
-          checkov -d .
+          echo "Running Checkov scan..."
+          checkov --config-file $GITHUB_WORKSPACE/CodeValidation/checkov-check.yml --directory $GITHUB_WORKSPACE
+          if [ $? -ne 0 ]; then
+            echo "Checkov scan failed"
+            exit 1
+          fi
 
-      - name: Run Terrascan
-        id: terrascan
-        uses: tenable/terrascan-action@main
-        with:
-          iac_type: 'terraform'
-          iac_version: 'v14'
-          policy_type: 'aws'
-          only_warn: true
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          echo "Applying Terraform changes..."
-          terraform apply -auto-approve plan.out
