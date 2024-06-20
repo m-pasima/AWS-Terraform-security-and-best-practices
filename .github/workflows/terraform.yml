@@ -3,7 +3,7 @@ name: terraform-checks
 on:
   push:
     branches:
-      - 'tech-dev-*'
+      - 'main'
 
 permissions:
   contents: read
