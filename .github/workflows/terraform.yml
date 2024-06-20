@@ -85,11 +85,27 @@ jobs:
           pip install checkov
           echo "Checkov installed successfully."
 
+      - name: Install Terraform fmt
+        run: |
+          set -e
+          echo "Installing Terraform fmt..."
+          curl -sL https://releases.hashicorp.com/terraform/0.15.5/terraform_0.15.5_linux_amd64.zip -o terraform-fmt.zip
+          unzip terraform-fmt.zip
+          sudo mv terraform /usr/local/bin/terraform-fmt
+          echo "Terraform fmt installed successfully."
+
+      - name: Format Terraform Code
+        run: |
+          set -e
+          echo "Formatting Terraform code..."
+          terraform fmt -recursive
+          echo "Terraform code formatted successfully."
+
       - name: Run Checkov
         run: |
           set -e
           echo "Running Checkov..."
-          checkov --directory $GITHUB_WORKSPACE --skip-check CKV2_AWS_41
+          checkov --directory $GITHUB_WORKSPACE
           echo "Checkov completed successfully."
 
       - name: Install Terrascan
@@ -105,7 +121,7 @@ jobs:
         run: |
           set -e
           echo "Running Terrascan..."
-          terrascan scan -t terraform -d .
+          terrascan scan -d .
           echo "Terrascan completed successfully."
 
       - name: Terraform Apply (Conditional)
@@ -115,5 +131,6 @@ jobs:
           echo "Applying Terraform changes..."
           terraform apply -auto-approve plan.out
           echo "Terraform apply completed successfully."
+
 
 
