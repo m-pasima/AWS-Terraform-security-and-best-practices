@@ -96,6 +96,12 @@ jobs:
           sudo mv terrascan-Linux-x86_64 /usr/local/bin/terrascan
         continue-on-error: false
 
+      - name: Verify Terrascan Installation
+        run: |
+          echo "Verifying Terrascan installation..."
+          terrascan version
+        continue-on-error: false
+
       - name: Run Terrascan
         run: |
           echo "Running Terrascan..."
