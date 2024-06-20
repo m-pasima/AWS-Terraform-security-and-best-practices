@@ -92,8 +92,7 @@ jobs:
           checkov --directory $GITHUB_WORKSPACE --skip-check CKV2_AWS_41
           echo "Checkov completed successfully."
 
-
-      - name: Terraform Apply (Conditional)
+      - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           set -e
