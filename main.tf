@@ -67,7 +67,7 @@ resource "aws_iam_role_policy_attachment" "terraform_policy_attachment" {
 
 # Create an IAM Instance Profile
 resource "aws_iam_instance_profile" "terraform_profile" {
-  name = "terraform-sec-profile"
+  name = "terraform-sec-profile-unique"
   role = aws_iam_role.ec2_role.name
 }
 
@@ -75,7 +75,7 @@ resource "aws_iam_instance_profile" "terraform_profile" {
 resource "aws_instance" "ec2_profile_instance" {
   ami                  = "ami-07d1e0a32156d0d21"
   instance_type        = "t2.micro"
-  iam_instance_profile = aws_iam_instance_profile.terraform_profile.name
+  iam_instance_profile = aws_iam_instance_profile.terraform_profile".name
   ebs_optimized        = true
   monitoring           = true
 
@@ -92,22 +92,3 @@ resource "aws_instance" "ec2_profile_instance" {
   }
 }
 
-resource "aws_instance" "terraform" {
-  ami                  = "ami-07d1e0a32156d0d21"
-  instance_type        = "t2.micro"
-  ebs_optimized        = true
-  monitoring           = true
-  iam_instance_profile = aws_iam_instance_profile.terraform_profile.name
-
-  metadata_options {
-    http_tokens = "required"
-  }
-
-  root_block_device {
-    encrypted = true
-  }
-
-  tags = {
-    Name = "terraform-test"
-  }
-}
